@@ -1,0 +1,225 @@
+:root {
+  --colour-ink: #2e125c;
+  --colour-muted: #614f78;
+  --colour-primary: #6e2ed9;
+  --colour-accent: #d1298c;
+  --colour-surface: #fffeff;
+  --colour-field: #fcfaff;
+  --colour-border: #c7b0eb;
+  --colour-background-start: #f9f4ff;
+  --colour-background-end: #fff6fb;
+  --gradient-brand: linear-gradient(135deg, #2e125c 0%, #6e2ed9 55%, #d1298c 100%);
+  --gradient-action: linear-gradient(135deg, #6e2ed9 0%, #d1298c 100%);
+  --shadow-header: 0 5px 14px rgb(69 20 122 / 18%);
+  --shadow-card: 0 14px 34px rgb(69 20 122 / 18%);
+  --radius-field: 12px;
+  --radius-button: 16px;
+  --radius-card: 30px;
+  --font-body: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  background: var(--colour-background-start);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  color: var(--colour-ink);
+  background: linear-gradient(106deg, var(--colour-background-start), var(--colour-background-end));
+  font-family: var(--font-body);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.topbar {
+  min-height: 72px;
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  background: var(--gradient-brand);
+  box-shadow: var(--shadow-header);
+}
+
+.topbar__brand {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.topbar__context {
+  color: #ccdefa;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.login-layout {
+  width: min(1300px, calc(100% - 48px));
+  min-height: calc(100vh - 72px);
+  margin: 0 auto;
+  padding: 53px 0;
+  display: grid;
+  grid-template-columns: minmax(0, 620px) minmax(420px, 520px);
+  gap: 100px;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-hero,
+.login-card {
+  min-height: 650px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.login-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 46px 52px;
+  color: white;
+  background: linear-gradient(112deg, #4f1ab8 0%, #942ee0 58%, #e03394 100%);
+}
+
+.login-hero__brand {
+  margin: 0 0 20px;
+  color: rgb(255 255 255 / 88%);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.login-hero h1 {
+  margin: 0;
+  font-size: clamp(34px, 3vw, 42px);
+  line-height: 1.15;
+}
+
+.login-hero__copy {
+  max-width: 470px;
+  margin: 28px 0 0;
+  color: rgb(255 255 255 / 86%);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.login-hero__art {
+  min-height: 280px;
+  margin: 72px 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  border-radius: 28px;
+  background: rgb(255 255 255 / 8%);
+}
+
+.person {
+  width: 112px;
+  height: 112px;
+  display: grid;
+  place-items: center;
+  color: var(--colour-ink);
+  background: #f4dcff;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.person--mentor {
+  transform: translateY(-38px);
+}
+
+.connection {
+  padding: 12px 18px;
+  color: var(--colour-primary);
+  background: white;
+  border-radius: 18px;
+  font-size: 24px;
+  letter-spacing: 4px;
+}
+
+.login-hero__tagline {
+  position: absolute;
+  left: 52px;
+  bottom: 22px;
+  margin: 0;
+  padding: 11px 14px;
+  background: rgb(255 255 255 / 16%);
+  border-radius: 19px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.login-card {
+  padding: 42px 40px;
+  background: var(--colour-surface);
+}
+
+.login-card h2 {
+  margin: 0;
+  font-size: 32px;
+}
+
+.login-card__intro {
+  margin: 20px 0 0;
+  color: var(--colour-muted);
+  font-size: 14px;
+}
+
+.login-card__pending {
+  margin: 60px 0 0;
+  padding: 20px;
+  color: var(--colour-muted);
+  background: var(--colour-field);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius-field);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 980px) {
+  .login-layout {
+    grid-template-columns: minmax(0, 620px);
+    gap: 32px;
+  }
+
+  .login-hero,
+  .login-card {
+    min-height: auto;
+  }
+
+  .login-card {
+    min-height: 520px;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    padding: 0 20px;
+  }
+
+  .login-layout {
+    width: min(100% - 24px, 520px);
+    padding: 24px 0;
+  }
+
+  .login-hero {
+    padding: 36px 28px 88px;
+  }
+
+  .login-hero__tagline {
+    left: 28px;
+  }
+
+  .login-card {
+    padding: 36px 28px;
+  }
+}

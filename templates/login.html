@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('login') }}">MentorLink</a>
+    <span class="topbar__context">Secure sign in</span>
+  </header>
+
+  <main class="login-layout">
+    <section class="login-hero" aria-labelledby="hero-heading">
+      <p class="login-hero__brand">MentorLink</p>
+      <h1 id="hero-heading">Grow together.<br>Learn with purpose.</h1>
+      <p class="login-hero__copy">
+        Connect students with experienced mentors, turn goals into action,
+        and track every step of the journey.
+      </p>
+      <div class="login-hero__art" aria-hidden="true">
+        <div class="person person--student">●‿●</div>
+        <div class="connection">•••</div>
+        <div class="person person--mentor">●‿●</div>
+      </div>
+      <p class="login-hero__tagline">Meaningful connections • Real progress</p>
+    </section>
+
+    <section class="login-card" aria-labelledby="login-heading">
+      <h2 id="login-heading">Welcome back</h2>
+      <p class="login-card__intro">Sign in to continue to your mentorship workspace.</p>
+      <p class="login-card__pending">
+        Authentication fields are added in the next SCRUM-13 implementation step.
+      </p>
+    </section>
+  </main>
+{% endblock %}
+
