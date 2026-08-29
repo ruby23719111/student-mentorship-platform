@@ -21,6 +21,35 @@ from werkzeug.security import check_password_hash, generate_password_hash
 DEMO_USERS = (
     ("Kris Hsu", "kris.student@qut.edu.au", "Student123!", "student"),
     ("Dr Maya Chen", "maya.mentor@qut.edu.au", "Mentor123!", "mentor"),
+    ("Jordan Lee", "jordan.mentor@qut.edu.au", "Mentor123!", "mentor"),
+    ("Aisha Rahman", "aisha.mentor@qut.edu.au", "Mentor123!", "mentor"),
+)
+
+DEMO_MENTOR_PROFILES = (
+    (
+        "maya.mentor@qut.edu.au",
+        "Cloud & DevOps",
+        "Cloud engineer helping students turn infrastructure ideas into practical plans.",
+        2,
+        1,
+        1,
+    ),
+    (
+        "jordan.mentor@qut.edu.au",
+        "Product Management",
+        "Product leader focused on discovery, prioritisation and measurable outcomes.",
+        2,
+        2,
+        1,
+    ),
+    (
+        "aisha.mentor@qut.edu.au",
+        "UX Research",
+        "UX researcher supporting inclusive interviews, synthesis and testing.",
+        3,
+        0,
+        1,
+    ),
 )
 
 
@@ -76,6 +105,21 @@ def create_app() -> Flask:
                 VALUES (?, ?, ?, ?)
                 """,
                 (name, email, generate_password_hash(password), role),
+            )
+
+        for email, expertise, bio, capacity, active_mentees, approved in (
+            DEMO_MENTOR_PROFILES
+        ):
+            database.execute(
+                """
+                INSERT OR IGNORE INTO mentor_profiles (
+                    user_id, expertise, bio, capacity, active_mentees, approved
+                )
+                SELECT id, ?, ?, ?, ?, ?
+                FROM users
+                WHERE email = ? AND role = 'mentor'
+                """,
+                (expertise, bio, capacity, active_mentees, approved, email),
             )
         database.commit()
 
@@ -151,11 +195,46 @@ def create_app() -> Flask:
         if session.get("role") != "student":
             flash("Sign in as a Student to continue.", "error")
             return redirect(url_for("login"))
+
+        search_term = request.args.get("q", "").strip()
+        selected_mentor_id = request.args.get("mentor", type=int)
+        sql = """
+            SELECT
+                mentor_profiles.id,
+                users.name,
+                mentor_profiles.expertise,
+                mentor_profiles.bio,
+                mentor_profiles.capacity,
+                mentor_profiles.active_mentees,
+                mentor_profiles.capacity - mentor_profiles.active_mentees AS places
+            FROM mentor_profiles
+            JOIN users ON users.id = mentor_profiles.user_id
+            WHERE mentor_profiles.approved = 1
+        """
+        parameters = []
+
+        if selected_mentor_id is not None:
+            sql += " AND mentor_profiles.id = ?"
+            parameters.append(selected_mentor_id)
+        elif search_term:
+            sql += """
+                AND (
+                    users.name LIKE ?
+                    OR mentor_profiles.expertise LIKE ?
+                    OR mentor_profiles.bio LIKE ?
+                )
+            """
+            pattern = f"%{search_term}%"
+            parameters.extend((pattern, pattern, pattern))
+
+        sql += " ORDER BY mentor_profiles.id"
+        mentors = get_db().execute(sql, parameters).fetchall()
+
         return render_template(
-            "dashboard_placeholder.html",
-            heading="Find the right mentor",
-            role="Student",
-            next_issue="SCRUM-15 will implement Mentor Discovery from Figma H03.",
+            "student_mentors.html",
+            mentors=mentors,
+            search_term=search_term,
+            selected_mentor_id=selected_mentor_id,
         )
 
     @app.get("/mentor/requests")
