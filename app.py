@@ -3,7 +3,9 @@
 import os
 import secrets
 import sqlite3
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from flask import (
     Flask,
@@ -81,6 +83,11 @@ def create_app() -> Flask:
         )
 
     app.jinja_env.globals["csrf_token"] = csrf_token
+
+    def format_date(value: str) -> str:
+        return datetime.fromisoformat(value).strftime("%d %b %Y")
+
+    app.jinja_env.filters["format_date"] = format_date
 
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
@@ -198,7 +205,6 @@ def create_app() -> Flask:
             return redirect(url_for("login"))
 
         search_term = request.args.get("q", "").strip()
-        selected_mentor_id = request.args.get("mentor", type=int)
         sql = """
             SELECT
                 mentor_profiles.id,
@@ -214,10 +220,7 @@ def create_app() -> Flask:
         """
         parameters = []
 
-        if selected_mentor_id is not None:
-            sql += " AND mentor_profiles.id = ?"
-            parameters.append(selected_mentor_id)
-        elif search_term:
+        if search_term:
             sql += """
                 AND (
                     users.name LIKE ?
@@ -235,7 +238,181 @@ def create_app() -> Flask:
             "student_mentors.html",
             mentors=mentors,
             search_term=search_term,
-            selected_mentor_id=selected_mentor_id,
+        )
+
+    def get_available_mentor(mentor_id: int):
+        return get_db().execute(
+            """
+            SELECT
+                mentor_profiles.id,
+                users.name,
+                mentor_profiles.expertise,
+                mentor_profiles.capacity - mentor_profiles.active_mentees AS places
+            FROM mentor_profiles
+            JOIN users ON users.id = mentor_profiles.user_id
+            WHERE mentor_profiles.id = ?
+              AND mentor_profiles.approved = 1
+              AND mentor_profiles.active_mentees < mentor_profiles.capacity
+            """,
+            (mentor_id,),
+        ).fetchone()
+
+    @app.route("/student/requests/new/<int:mentor_id>", methods=("GET", "POST"))
+    def student_request_new(mentor_id: int):
+        if session.get("role") != "student":
+            flash("Sign in as a Student to continue.", "error")
+            return redirect(url_for("login"))
+
+        mentor = get_available_mentor(mentor_id)
+        if mentor is None:
+            flash("This Mentor is unavailable for new requests.", "error")
+            return redirect(url_for("student_mentors"))
+
+        learning_goal = ""
+        message = ""
+        errors = {}
+
+        existing_request = get_db().execute(
+            """
+            SELECT id
+            FROM mentorship_requests
+            WHERE student_id = ? AND status IN ('pending', 'accepted')
+            """,
+            (session["user_id"],),
+        ).fetchone()
+
+        if existing_request is not None:
+            flash(
+                "You already have a pending or active mentorship request.",
+                "error",
+            )
+            return redirect(
+                url_for(
+                    "student_request_submitted",
+                    request_id=existing_request["id"],
+                )
+            )
+
+        if request.method == "POST":
+            learning_goal = request.form.get("learning_goal", "").strip()
+            message = request.form.get("message", "").strip()
+
+            if not csrf_token_is_valid():
+                errors["form"] = (
+                    "Your form session expired. Refresh the page and try again."
+                )
+
+            if len(learning_goal) < 20:
+                errors["learning_goal"] = "Enter at least 20 characters."
+
+            if len(message) < 20:
+                errors["message"] = "Enter at least 20 characters."
+
+            if not errors:
+                submitted_at = datetime.now(
+                    ZoneInfo("Australia/Brisbane")
+                ).isoformat(timespec="seconds")
+                try:
+                    cursor = get_db().execute(
+                        """
+                        INSERT INTO mentorship_requests (
+                            student_id,
+                            mentor_profile_id,
+                            learning_goal,
+                            message,
+                            status,
+                            submitted_at
+                        )
+                        VALUES (?, ?, ?, ?, 'pending', ?)
+                        """,
+                        (
+                            session["user_id"],
+                            mentor["id"],
+                            learning_goal,
+                            message,
+                            submitted_at,
+                        ),
+                    )
+                    get_db().commit()
+                except sqlite3.IntegrityError:
+                    get_db().rollback()
+                    errors["form"] = (
+                        "You already have a pending or active mentorship request."
+                    )
+                else:
+                    return redirect(
+                        url_for(
+                            "student_request_submitted",
+                            request_id=cursor.lastrowid,
+                        )
+                    )
+
+        return render_template(
+            "student_request_form.html",
+            mentor=mentor,
+            learning_goal=learning_goal,
+            message=message,
+            errors=errors,
+        )
+
+    def get_student_request(request_id: int):
+        return get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id,
+                mentorship_requests.status,
+                mentorship_requests.submitted_at,
+                users.name AS mentor_name,
+                mentor_profiles.expertise
+            FROM mentorship_requests
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorship_requests.mentor_profile_id
+            JOIN users ON users.id = mentor_profiles.user_id
+            WHERE mentorship_requests.id = ?
+              AND mentorship_requests.student_id = ?
+            """,
+            (request_id, session.get("user_id")),
+        ).fetchone()
+
+    @app.get("/student/requests")
+    def student_requests():
+        if session.get("role") != "student":
+            flash("Sign in as a Student to continue.", "error")
+            return redirect(url_for("login"))
+
+        latest_request = get_db().execute(
+            """
+            SELECT id
+            FROM mentorship_requests
+            WHERE student_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (session["user_id"],),
+        ).fetchone()
+        if latest_request is None:
+            return redirect(url_for("student_mentors"))
+        return redirect(
+            url_for(
+                "student_request_submitted",
+                request_id=latest_request["id"],
+            )
+        )
+
+    @app.get("/student/requests/<int:request_id>/submitted")
+    def student_request_submitted(request_id: int):
+        if session.get("role") != "student":
+            flash("Sign in as a Student to continue.", "error")
+            return redirect(url_for("login"))
+
+        request_item = get_student_request(request_id)
+        if request_item is None:
+            flash("That mentorship request could not be found.", "error")
+            return redirect(url_for("student_mentors"))
+
+        return render_template(
+            "student_request_submitted.html",
+            request_item=request_item,
         )
 
     @app.get("/mentor/requests")
