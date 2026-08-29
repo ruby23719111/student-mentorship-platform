@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Request submitted | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('student_mentors') }}">MentorLink</a>
+    <span class="topbar__context">Student</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Student navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link" href="{{ url_for('student_mentors') }}">Discover mentors</a>
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_requests') }}" aria-current="page">My requests</a>
+        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+      </nav>
+    </aside>
+
+    <main class="request-page request-page--submitted">
+      <h1>Request submitted</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="form-alert form-alert--{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <section class="success-alert" aria-labelledby="success-heading">
+        <h2 id="success-heading">Your request was sent</h2>
+        <p>{{ request_item.mentor_name }} will review it. You can track or withdraw the request below.</p>
+      </section>
+
+      <article class="submitted-request-card">
+        <h2>Request to {{ request_item.mentor_name }}</h2>
+        <span class="status-badge status-badge--pending">{{ request_item.status|capitalize }}</span>
+        <p>Submitted {{ request_item.submitted_at|format_date }} • {{ request_item.expertise }}</p>
+        <a class="button button--primary" href="{{ url_for('student_requests') }}">View my requests</a>
+      </article>
+    </main>
+  </div>
+{% endblock %}

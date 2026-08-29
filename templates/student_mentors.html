@@ -14,7 +14,7 @@
         <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_mentors') }}" aria-current="page">
           Discover mentors
         </a>
-        <span class="sidebar__link sidebar__link--pending">My requests</span>
+        <a class="sidebar__link" href="{{ url_for('student_requests') }}">My requests</a>
         <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
       </nav>
 
@@ -44,10 +44,6 @@
           <button class="sr-only" type="submit">Search</button>
         </form>
 
-        {% if selected_mentor_id %}
-          <a class="search-reset" href="{{ url_for('student_mentors') }}">← Back to all mentors</a>
-        {% endif %}
-
         <div class="mentor-grid" aria-live="polite">
           {% for mentor in mentors %}
             <article class="mentor-card">
@@ -61,7 +57,7 @@
                 <p class="mentor-card__availability mentor-card__availability--open">
                   Available • {{ mentor.places }} {{ 'place' if mentor.places == 1 else 'places' }}
                 </p>
-                <a class="button button--primary mentor-card__action" href="{{ url_for('student_mentors', mentor=mentor.id) }}">
+                <a class="button button--primary mentor-card__action" href="{{ url_for('student_request_new', mentor_id=mentor.id) }}">
                   View profile
                 </a>
               {% else %}

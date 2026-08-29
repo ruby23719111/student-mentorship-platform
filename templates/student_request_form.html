@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Request mentorship | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('student_mentors') }}">MentorLink</a>
+    <span class="topbar__context">Student</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Student navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_mentors') }}" aria-current="page">Discover mentors</a>
+        <a class="sidebar__link" href="{{ url_for('student_requests') }}">My requests</a>
+        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+      </nav>
+    </aside>
+
+    <main class="request-page">
+      <h1>Request mentorship</h1>
+
+      <form class="request-form-card" method="post" novalidate>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+        <header class="request-form-card__mentor">
+          <h2>{{ mentor.name }}</h2>
+          {% if errors %}
+            <p class="request-form-card__error-summary">Please correct the highlighted field.</p>
+          {% else %}
+            <p>{{ mentor.expertise }} • Available</p>
+          {% endif %}
+        </header>
+
+        {% if errors.form %}
+          <div class="form-alert form-alert--error" role="alert">{{ errors.form }}</div>
+        {% endif %}
+
+        <div class="request-fields">
+          <div class="form-field{% if errors.learning_goal %} form-field--error{% endif %}">
+            <label for="learning-goal">Learning goal *</label>
+            <input
+              id="learning-goal"
+              name="learning_goal"
+              type="text"
+              value="{{ learning_goal }}"
+              placeholder="Describe what you want to achieve"
+              maxlength="240"
+              {% if errors.learning_goal %}aria-invalid="true" aria-describedby="learning-goal-error"{% endif %}
+            >
+            {% if errors.learning_goal %}
+              <p id="learning-goal-error" class="field-error">{{ errors.learning_goal }}</p>
+            {% endif %}
+          </div>
+
+          <div class="form-field{% if errors.message %} form-field--error{% endif %}">
+            <label for="mentor-message">Message to mentor *</label>
+            <input
+              id="mentor-message"
+              name="message"
+              type="text"
+              value="{{ message }}"
+              placeholder="Share relevant background and expectations"
+              maxlength="500"
+              {% if errors.message %}aria-invalid="true" aria-describedby="mentor-message-error"{% endif %}
+            >
+            {% if errors.message %}
+              <p id="mentor-message-error" class="field-error">{{ errors.message }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <p class="request-limit">Requests are limited to one active or pending request per student.</p>
+
+        <div class="request-form-actions">
+          <a class="button button--secondary" href="{{ url_for('student_mentors') }}">Cancel</a>
+          <button class="button button--primary" type="submit">Review and submit</button>
+        </div>
+      </form>
+    </main>
+  </div>
+{% endblock %}

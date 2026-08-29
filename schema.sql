@@ -17,3 +17,20 @@ CREATE TABLE IF NOT EXISTS mentor_profiles (
     FOREIGN KEY (user_id) REFERENCES users (id),
     CHECK (active_mentees <= capacity)
 );
+
+CREATE TABLE IF NOT EXISTS mentorship_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER NOT NULL,
+    mentor_profile_id INTEGER NOT NULL,
+    learning_goal TEXT NOT NULL CHECK (length(trim(learning_goal)) >= 20),
+    message TEXT NOT NULL CHECK (length(trim(message)) >= 20),
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'accepted', 'rejected', 'withdrawn')),
+    submitted_at TEXT NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES users (id),
+    FOREIGN KEY (mentor_profile_id) REFERENCES mentor_profiles (id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS one_open_request_per_student
+ON mentorship_requests (student_id)
+WHERE status IN ('pending', 'accepted');
