@@ -35,6 +35,24 @@ def create_app() -> Flask:
     )
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
+    def csrf_token() -> str:
+        token = session.get("_csrf_token")
+        if token is None:
+            token = secrets.token_urlsafe(32)
+            session["_csrf_token"] = token
+        return token
+
+    def csrf_token_is_valid() -> bool:
+        expected = session.get("_csrf_token", "")
+        submitted = request.form.get("_csrf_token", "")
+        return bool(
+            expected
+            and submitted
+            and secrets.compare_digest(expected, submitted)
+        )
+
+    app.jinja_env.globals["csrf_token"] = csrf_token
+
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
             g.db = sqlite3.connect(app.config["DATABASE"])
@@ -74,6 +92,11 @@ def create_app() -> Flask:
             password = request.form.get("password", "")
             role = request.form.get("role", "").strip().lower()
             errors = {}
+
+            if not csrf_token_is_valid():
+                errors["form"] = (
+                    "Your sign-in session expired. Refresh the page and try again."
+                )
 
             if not email:
                 errors["email"] = "Enter your QUT email address."
@@ -149,6 +172,9 @@ def create_app() -> Flask:
 
     @app.post("/logout")
     def logout():
+        if not csrf_token_is_valid():
+            flash("Your session expired. Sign out again.", "error")
+            return redirect(url_for("index"))
         session.clear()
         return redirect(url_for("login"))
 

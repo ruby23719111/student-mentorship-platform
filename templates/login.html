@@ -39,6 +39,7 @@
       {% endif %}
 
       <form class="login-form" method="post" novalidate>
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
         <div class="form-field{% if errors.email %} form-field--error{% endif %}">
           <label for="email">Email address</label>
           <input
@@ -108,4 +109,3 @@
     </section>
   </main>
 {% endblock %}
-
