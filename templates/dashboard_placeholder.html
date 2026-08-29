@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ heading }} | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('index') }}">MentorLink</a>
+    <span class="topbar__context">{{ role }}</span>
+  </header>
+
+  <main class="placeholder-page">
+    <section class="placeholder-card">
+      <p class="eyebrow">Signed in as {{ session.user_name }}</p>
+      <h1>{{ heading }}</h1>
+      <p>{{ next_issue }}</p>
+      <form action="{{ url_for('logout') }}" method="post">
+        <button class="button button--secondary" type="submit">Sign out</button>
+      </form>
+    </section>
+  </main>
+{% endblock %}
+
