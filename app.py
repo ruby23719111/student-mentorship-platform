@@ -86,6 +86,7 @@ def create_app() -> Flask:
         if "db" not in g:
             g.db = sqlite3.connect(app.config["DATABASE"])
             g.db.row_factory = sqlite3.Row
+            g.db.execute("PRAGMA foreign_keys = ON")
         return g.db
 
     def close_db(_error=None) -> None:
