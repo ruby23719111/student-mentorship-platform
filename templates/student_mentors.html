@@ -31,6 +31,12 @@
           Search by expertise, experience or name. Availability is checked before you request.
         </p>
 
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="form-alert form-alert--{{ category }}" role="alert">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+
         <form class="mentor-search" method="get" action="{{ url_for('student_mentors') }}" role="search">
           <label class="sr-only" for="mentor-search">Search mentors</label>
           <input
