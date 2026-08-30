@@ -12,7 +12,7 @@
     <aside class="sidebar" aria-label="Mentor navigation">
       <nav class="sidebar__nav">
         <a class="sidebar__link" href="{{ url_for('mentor_requests') }}">Pending requests</a>
-        <span class="sidebar__link sidebar__link--active" aria-current="page">Active mentorships</span>
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('mentor_active_mentorships') }}" aria-current="page">Active mentorships</a>
         <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
       </nav>
       <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
@@ -33,7 +33,7 @@
         <h2>{{ mentorship.student_name }} + {{ mentorship.mentor_name }}</h2>
         <span class="status-badge status-badge--active">Active</span>
         <p>{{ mentorship.start_date | format_date }} – {{ mentorship.end_date | format_date }} • {{ mentorship.expertise }}</p>
-        <a class="button button--primary" href="{{ url_for('mentor_request_accepted', request_id=mentorship.request_id) }}">View mentorship</a>
+        <a class="button button--primary" href="{{ url_for('mentor_active_mentorships') }}">View mentorship</a>
       </article>
     </main>
   </div>

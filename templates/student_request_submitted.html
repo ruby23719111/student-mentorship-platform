@@ -13,7 +13,7 @@
       <nav class="sidebar__nav">
         <a class="sidebar__link" href="{{ url_for('student_mentors') }}">Discover mentors</a>
         <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_requests') }}" aria-current="page">My requests</a>
-        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+        <a class="sidebar__link" href="{{ url_for('student_active_mentorships') }}">Active mentorships</a>
       </nav>
     </aside>
 

@@ -998,6 +998,168 @@ a {
   justify-content: center;
 }
 
+.tracking-page {
+  min-width: 0;
+  padding: 44px 50px 80px;
+}
+
+.tracking-page > h1 {
+  width: min(980px, 100%);
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.2;
+}
+
+.tracking-page > .form-alert {
+  width: min(980px, 100%);
+}
+
+.student-request-card {
+  position: relative;
+  width: min(980px, 100%);
+  min-height: 230px;
+  margin-top: 54px;
+  padding: 28px;
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgb(69 20 122 / 11%);
+}
+
+.tracking-page > .form-alert + .student-request-card {
+  margin-top: 18px;
+}
+
+.student-request-card h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.student-request-card p {
+  margin: 20px 0 0;
+  color: var(--colour-muted);
+  font-size: 14px;
+}
+
+.student-request-card form,
+.student-request-card > .button {
+  position: absolute;
+  right: 40px;
+  bottom: 32px;
+  width: 240px;
+}
+
+.student-request-card form .button,
+.student-request-card > .button {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.request-empty-state {
+  width: min(760px, 100%);
+  min-height: 124px;
+  margin-top: 78px;
+  padding: 18px 20px;
+  color: var(--colour-primary);
+  background: #f5edff;
+  border: 1px solid var(--colour-primary);
+  border-radius: 18px;
+  box-shadow: 0 5px 8px rgb(64 26 115 / 8%);
+}
+
+.request-empty-state h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.request-empty-state p {
+  width: min(380px, 100%);
+  margin: 10px 0 0;
+  color: var(--colour-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.active-mentorship-card {
+  width: min(980px, 100%);
+  min-height: 420px;
+  margin-top: 54px;
+  padding: 30px 32px 26px;
+  background: white;
+  border-radius: 22px;
+  box-shadow: 0 8px 24px rgb(69 20 122 / 11%);
+}
+
+.active-mentorship-card h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.active-mentorship-card__label {
+  margin: 30px 0 0;
+  color: var(--colour-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.active-mentorship-card__dates {
+  margin: 12px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.active-mentorship-card__dates span {
+  margin: 0 10px;
+  color: var(--colour-primary);
+}
+
+.active-mentorship-card__next {
+  margin: 52px 0 0;
+  color: var(--colour-muted);
+  font-size: 14px;
+}
+
+.mentorship-progress {
+  width: 100%;
+  height: 8px;
+  margin-top: 28px;
+  background: var(--gradient-action);
+  border-radius: 4px;
+}
+
+.milestone-grid {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.milestone {
+  min-height: 74px;
+  padding: 13px 15px;
+  background: #fff2fa;
+  border: 1px solid #d9bff5;
+  border-radius: 16px;
+}
+
+.milestone--current {
+  background: #f0e3ff;
+}
+
+.milestone h3 {
+  margin: 0;
+  color: var(--colour-primary);
+  font-size: 12px;
+}
+
+.milestone p {
+  margin: 12px 0 0;
+  color: #57456e;
+  font-size: 12px;
+}
+
 @media (max-width: 980px) {
   .login-layout {
     grid-template-columns: minmax(0, 620px);
@@ -1030,6 +1192,10 @@ a {
   }
 
   .mentor-page {
+    padding: 40px 28px 64px;
+  }
+
+  .tracking-page {
     padding: 40px 28px 64px;
   }
 }
@@ -1103,6 +1269,48 @@ a {
 
   .mentor-page {
     padding: 32px 18px 52px;
+  }
+
+  .tracking-page {
+    padding: 32px 18px 52px;
+  }
+
+  .tracking-page > h1 {
+    font-size: 26px;
+  }
+
+  .student-request-card {
+    min-height: 300px;
+  }
+
+  .student-request-card form,
+  .student-request-card > .button {
+    position: absolute;
+    right: 22px;
+    bottom: 28px;
+    left: 22px;
+    width: auto;
+  }
+
+  .active-mentorship-card {
+    padding: 28px 22px;
+  }
+
+  .active-mentorship-card h2 {
+    font-size: 20px;
+  }
+
+  .active-mentorship-card__dates {
+    display: grid;
+    gap: 8px;
+  }
+
+  .active-mentorship-card__dates span {
+    margin: 0;
+  }
+
+  .milestone-grid {
+    grid-template-columns: 1fr;
   }
 
   .mentor-page > h1 {

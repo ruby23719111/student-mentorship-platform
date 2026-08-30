@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}My requests | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('student_mentors') }}">MentorLink</a>
+    <span class="topbar__context">Student</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Student navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link" href="{{ url_for('student_mentors') }}">Discover mentors</a>
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_requests') }}" aria-current="page">My requests</a>
+        <a class="sidebar__link" href="{{ url_for('student_active_mentorships') }}">Active mentorships</a>
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="tracking-page">
+      <h1>My requests</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="form-alert form-alert--{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      {% if request_item and request_item.status == 'pending' %}
+        <article class="student-request-card">
+          <h2>{{ request_item.mentor_name }}</h2>
+          <span class="status-badge status-badge--pending">Pending</span>
+          <p>{{ request_item.expertise }} mentorship request</p>
+          <form action="{{ url_for('student_request_withdraw', request_id=request_item.id) }}" method="post">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+            <button class="button button--secondary" type="submit">Withdraw request</button>
+          </form>
+        </article>
+      {% elif request_item and request_item.status == 'accepted' %}
+        <article class="student-request-card">
+          <h2>{{ request_item.mentor_name }}</h2>
+          <span class="status-badge status-badge--active">Accepted</span>
+          <p>{{ request_item.expertise }} mentorship request</p>
+          <a class="button button--primary" href="{{ url_for('student_active_mentorships') }}">View active mentorship</a>
+        </article>
+      {% else %}
+        <section class="request-empty-state" aria-labelledby="request-empty-title">
+          <h2 id="request-empty-title">
+            {% if request_item and request_item.status == 'withdrawn' %}Request withdrawn{% elif request_item and request_item.status == 'rejected' %}Request declined{% else %}No pending requests{% endif %}
+          </h2>
+          <p>You have no pending mentorship requests. Browse mentors when you are ready.</p>
+        </section>
+      {% endif %}
+    </main>
+  </div>
+{% endblock %}
