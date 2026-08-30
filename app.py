@@ -56,7 +56,7 @@ DEMO_MENTOR_PROFILES = (
 )
 
 
-def create_app() -> Flask:
+def create_app(test_config: dict | None = None) -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
@@ -65,6 +65,8 @@ def create_app() -> Flask:
         ),
         SECRET_KEY=os.environ.get("SECRET_KEY", secrets.token_hex(32)),
     )
+    if test_config is not None:
+        app.config.update(test_config)
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
     def csrf_token() -> str:
