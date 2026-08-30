@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Request declined | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('mentor_requests') }}">MentorLink</a>
+    <span class="topbar__context">Mentor</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Mentor navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('mentor_requests') }}" aria-current="page">Pending requests</a>
+        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+        <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="mentor-page mentor-page--decision">
+      <h1>Request declined</h1>
+
+      <article class="declined-request-card">
+        <span class="status-badge status-badge--rejected">Rejected</span>
+        <h2>The request from {{ request_item.student_name }} was declined.</h2>
+        <p>The student has been notified and may request another available mentor.</p>
+        <a class="button button--primary" href="{{ url_for('mentor_requests') }}">Back to pending requests</a>
+      </article>
+    </main>
+  </div>
+{% endblock %}
