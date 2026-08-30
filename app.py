@@ -3,7 +3,7 @@
 import os
 import secrets
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -420,11 +420,242 @@ def create_app() -> Flask:
         if session.get("role") != "mentor":
             flash("Sign in as a Mentor to continue.", "error")
             return redirect(url_for("login"))
+
+        pending_requests = get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id,
+                mentorship_requests.learning_goal,
+                mentorship_requests.submitted_at,
+                students.name AS student_name
+            FROM mentorship_requests
+            JOIN users AS students
+                ON students.id = mentorship_requests.student_id
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorship_requests.mentor_profile_id
+            WHERE mentor_profiles.user_id = ?
+              AND mentorship_requests.status = 'pending'
+            ORDER BY mentorship_requests.submitted_at, mentorship_requests.id
+            """,
+            (session["user_id"],),
+        ).fetchall()
+
         return render_template(
-            "dashboard_placeholder.html",
-            heading="Pending requests",
-            role="Mentor",
-            next_issue="SCRUM-17 will implement Pending Requests from Figma H08.",
+            "mentor_requests.html",
+            pending_requests=pending_requests,
+        )
+
+    def get_mentor_request(request_id: int):
+        return get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id,
+                mentorship_requests.learning_goal,
+                mentorship_requests.message,
+                mentorship_requests.status,
+                mentorship_requests.submitted_at,
+                students.name AS student_name,
+                mentor_profiles.id AS mentor_profile_id,
+                mentor_profiles.expertise,
+                mentor_profiles.capacity,
+                mentor_profiles.active_mentees
+            FROM mentorship_requests
+            JOIN users AS students
+                ON students.id = mentorship_requests.student_id
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorship_requests.mentor_profile_id
+            WHERE mentorship_requests.id = ?
+              AND mentor_profiles.user_id = ?
+            """,
+            (request_id, session.get("user_id")),
+        ).fetchone()
+
+    @app.get("/mentor/requests/<int:request_id>")
+    def mentor_request_review(request_id: int):
+        if session.get("role") != "mentor":
+            flash("Sign in as a Mentor to continue.", "error")
+            return redirect(url_for("login"))
+
+        request_item = get_mentor_request(request_id)
+        if request_item is None:
+            flash("That mentorship request could not be found.", "error")
+            return redirect(url_for("mentor_requests"))
+        if request_item["status"] == "accepted":
+            return redirect(
+                url_for("mentor_request_accepted", request_id=request_id)
+            )
+        if request_item["status"] == "rejected":
+            return redirect(
+                url_for("mentor_request_rejected", request_id=request_id)
+            )
+        if request_item["status"] != "pending":
+            flash("That mentorship request is no longer pending.", "error")
+            return redirect(url_for("mentor_requests"))
+
+        return render_template(
+            "mentor_request_review.html",
+            request_item=request_item,
+        )
+
+    @app.post("/mentor/requests/<int:request_id>/decision")
+    def mentor_request_decision(request_id: int):
+        if session.get("role") != "mentor":
+            flash("Sign in as a Mentor to continue.", "error")
+            return redirect(url_for("login"))
+        if not csrf_token_is_valid():
+            flash("Your form session expired. Review the request and try again.", "error")
+            return redirect(
+                url_for("mentor_request_review", request_id=request_id)
+            )
+
+        action = request.form.get("action", "")
+        if action not in {"accept", "reject"}:
+            flash("Choose Accept or Reject.", "error")
+            return redirect(
+                url_for("mentor_request_review", request_id=request_id)
+            )
+
+        request_item = get_mentor_request(request_id)
+        if request_item is None:
+            flash("That mentorship request could not be found.", "error")
+            return redirect(url_for("mentor_requests"))
+        if request_item["status"] != "pending":
+            flash("That mentorship request has already been reviewed.", "error")
+            return redirect(
+                url_for("mentor_request_review", request_id=request_id)
+            )
+
+        database = get_db()
+        try:
+            database.execute("BEGIN IMMEDIATE")
+
+            if action == "accept":
+                capacity_update = database.execute(
+                    """
+                    UPDATE mentor_profiles
+                    SET active_mentees = active_mentees + 1
+                    WHERE id = ?
+                      AND user_id = ?
+                      AND active_mentees < capacity
+                    """,
+                    (request_item["mentor_profile_id"], session["user_id"]),
+                )
+                if capacity_update.rowcount != 1:
+                    database.rollback()
+                    flash(
+                        "Your capacity is full. Update capacity before accepting this request.",
+                        "error",
+                    )
+                    return redirect(
+                        url_for("mentor_request_review", request_id=request_id)
+                    )
+
+                request_update = database.execute(
+                    """
+                    UPDATE mentorship_requests
+                    SET status = 'accepted'
+                    WHERE id = ? AND status = 'pending'
+                    """,
+                    (request_id,),
+                )
+                if request_update.rowcount != 1:
+                    raise sqlite3.IntegrityError("Request was already reviewed")
+
+                start_date = datetime.now(ZoneInfo("Australia/Brisbane")).date()
+                end_date = start_date + timedelta(weeks=12)
+                database.execute(
+                    """
+                    INSERT INTO mentorships (
+                        request_id,
+                        mentor_profile_id,
+                        start_date,
+                        end_date,
+                        status
+                    )
+                    VALUES (?, ?, ?, ?, 'active')
+                    """,
+                    (
+                        request_id,
+                        request_item["mentor_profile_id"],
+                        start_date.isoformat(),
+                        end_date.isoformat(),
+                    ),
+                )
+                destination = "mentor_request_accepted"
+            else:
+                request_update = database.execute(
+                    """
+                    UPDATE mentorship_requests
+                    SET status = 'rejected'
+                    WHERE id = ? AND status = 'pending'
+                    """,
+                    (request_id,),
+                )
+                if request_update.rowcount != 1:
+                    raise sqlite3.IntegrityError("Request was already reviewed")
+                destination = "mentor_request_rejected"
+
+            database.commit()
+        except sqlite3.IntegrityError:
+            database.rollback()
+            flash("That mentorship request has already been reviewed.", "error")
+            return redirect(url_for("mentor_requests"))
+
+        return redirect(url_for(destination, request_id=request_id))
+
+    @app.get("/mentor/requests/<int:request_id>/accepted")
+    def mentor_request_accepted(request_id: int):
+        if session.get("role") != "mentor":
+            flash("Sign in as a Mentor to continue.", "error")
+            return redirect(url_for("login"))
+
+        mentorship = get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id AS request_id,
+                students.name AS student_name,
+                mentors.name AS mentor_name,
+                mentor_profiles.expertise,
+                mentorships.start_date,
+                mentorships.end_date
+            FROM mentorships
+            JOIN mentorship_requests
+                ON mentorship_requests.id = mentorships.request_id
+            JOIN users AS students
+                ON students.id = mentorship_requests.student_id
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorships.mentor_profile_id
+            JOIN users AS mentors ON mentors.id = mentor_profiles.user_id
+            WHERE mentorship_requests.id = ?
+              AND mentor_profiles.user_id = ?
+              AND mentorship_requests.status = 'accepted'
+              AND mentorships.status = 'active'
+            """,
+            (request_id, session["user_id"]),
+        ).fetchone()
+        if mentorship is None:
+            flash("That active mentorship could not be found.", "error")
+            return redirect(url_for("mentor_requests"))
+
+        return render_template(
+            "mentor_request_accepted.html",
+            mentorship=mentorship,
+        )
+
+    @app.get("/mentor/requests/<int:request_id>/rejected")
+    def mentor_request_rejected(request_id: int):
+        if session.get("role") != "mentor":
+            flash("Sign in as a Mentor to continue.", "error")
+            return redirect(url_for("login"))
+
+        request_item = get_mentor_request(request_id)
+        if request_item is None or request_item["status"] != "rejected":
+            flash("That declined request could not be found.", "error")
+            return redirect(url_for("mentor_requests"))
+
+        return render_template(
+            "mentor_request_rejected.html",
+            request_item=request_item,
         )
 
     @app.post("/logout")

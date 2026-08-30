@@ -34,3 +34,16 @@ CREATE TABLE IF NOT EXISTS mentorship_requests (
 CREATE UNIQUE INDEX IF NOT EXISTS one_open_request_per_student
 ON mentorship_requests (student_id)
 WHERE status IN ('pending', 'accepted');
+
+CREATE TABLE IF NOT EXISTS mentorships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    request_id INTEGER NOT NULL UNIQUE,
+    mentor_profile_id INTEGER NOT NULL,
+    start_date TEXT NOT NULL,
+    end_date TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'active'
+        CHECK (status IN ('active', 'completed')),
+    FOREIGN KEY (request_id) REFERENCES mentorship_requests (id),
+    FOREIGN KEY (mentor_profile_id) REFERENCES mentor_profiles (id),
+    CHECK (date(end_date) > date(start_date))
+);
