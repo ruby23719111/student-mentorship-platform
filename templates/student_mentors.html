@@ -15,7 +15,7 @@
           Discover mentors
         </a>
         <a class="sidebar__link" href="{{ url_for('student_requests') }}">My requests</a>
-        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+        <a class="sidebar__link" href="{{ url_for('student_active_mentorships') }}">Active mentorships</a>
       </nav>
 
       <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">

@@ -22,6 +22,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 DEMO_USERS = (
     ("Kris Hsu", "kris.student@qut.edu.au", "Student123!", "student"),
+    ("Alex Nguyen", "alex.student@qut.edu.au", "Student123!", "student"),
     ("Dr Maya Chen", "maya.mentor@qut.edu.au", "Mentor123!", "mentor"),
     ("Jordan Lee", "jordan.mentor@qut.edu.au", "Mentor123!", "mentor"),
     ("Aisha Rahman", "aisha.mentor@qut.edu.au", "Mentor123!", "mentor"),
@@ -88,6 +89,11 @@ def create_app() -> Flask:
         return datetime.fromisoformat(value).strftime("%d %b %Y")
 
     app.jinja_env.filters["format_date"] = format_date
+
+    def format_long_date(value: str) -> str:
+        return datetime.fromisoformat(value).strftime("%d %B %Y")
+
+    app.jinja_env.filters["format_long_date"] = format_long_date
 
     def get_db() -> sqlite3.Connection:
         if "db" not in g:
@@ -382,21 +388,92 @@ def create_app() -> Flask:
 
         latest_request = get_db().execute(
             """
-            SELECT id
+            SELECT
+                mentorship_requests.id,
+                mentorship_requests.status,
+                mentorship_requests.submitted_at,
+                users.name AS mentor_name,
+                mentor_profiles.expertise
             FROM mentorship_requests
-            WHERE student_id = ?
-            ORDER BY id DESC
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorship_requests.mentor_profile_id
+            JOIN users ON users.id = mentor_profiles.user_id
+            WHERE mentorship_requests.student_id = ?
+            ORDER BY mentorship_requests.id DESC
             LIMIT 1
             """,
             (session["user_id"],),
         ).fetchone()
-        if latest_request is None:
-            return redirect(url_for("student_mentors"))
-        return redirect(
-            url_for(
-                "student_request_submitted",
-                request_id=latest_request["id"],
-            )
+
+        return render_template(
+            "student_requests.html",
+            request_item=latest_request,
+        )
+
+    @app.post("/student/requests/<int:request_id>/withdraw")
+    def student_request_withdraw(request_id: int):
+        if session.get("role") != "student":
+            flash("Sign in as a Student to continue.", "error")
+            return redirect(url_for("login"))
+        if not csrf_token_is_valid():
+            flash("Your form session expired. Review the request and try again.", "error")
+            return redirect(url_for("student_requests"))
+
+        cursor = get_db().execute(
+            """
+            UPDATE mentorship_requests
+            SET status = 'withdrawn'
+            WHERE id = ?
+              AND student_id = ?
+              AND status = 'pending'
+            """,
+            (request_id, session["user_id"]),
+        )
+        if cursor.rowcount != 1:
+            get_db().rollback()
+            flash("Only your pending request can be withdrawn.", "error")
+            return redirect(url_for("student_requests"))
+
+        get_db().commit()
+        return redirect(url_for("student_requests"))
+
+    def get_active_mentorship_for_student():
+        return get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id AS request_id,
+                students.name AS student_name,
+                mentors.name AS mentor_name,
+                mentor_profiles.expertise,
+                mentorships.start_date,
+                mentorships.end_date
+            FROM mentorships
+            JOIN mentorship_requests
+                ON mentorship_requests.id = mentorships.request_id
+            JOIN users AS students
+                ON students.id = mentorship_requests.student_id
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorships.mentor_profile_id
+            JOIN users AS mentors ON mentors.id = mentor_profiles.user_id
+            WHERE mentorship_requests.student_id = ?
+              AND mentorship_requests.status = 'accepted'
+              AND mentorships.status = 'active'
+            ORDER BY mentorships.id DESC
+            LIMIT 1
+            """,
+            (session.get("user_id"),),
+        ).fetchone()
+
+    @app.get("/student/mentorships")
+    def student_active_mentorships():
+        if session.get("role") != "student":
+            flash("Sign in as a Student to continue.", "error")
+            return redirect(url_for("login"))
+
+        return render_template(
+            "active_mentorship.html",
+            mentorship=get_active_mentorship_for_student(),
+            role="Student",
         )
 
     @app.get("/student/requests/<int:request_id>/submitted")
@@ -409,6 +486,10 @@ def create_app() -> Flask:
         if request_item is None:
             flash("That mentorship request could not be found.", "error")
             return redirect(url_for("student_mentors"))
+        if request_item["status"] == "accepted":
+            return redirect(url_for("student_active_mentorships"))
+        if request_item["status"] != "pending":
+            return redirect(url_for("student_requests"))
 
         return render_template(
             "student_request_submitted.html",
@@ -656,6 +737,44 @@ def create_app() -> Flask:
         return render_template(
             "mentor_request_rejected.html",
             request_item=request_item,
+        )
+
+    @app.get("/mentor/mentorships")
+    def mentor_active_mentorships():
+        if session.get("role") != "mentor":
+            flash("Sign in as a Mentor to continue.", "error")
+            return redirect(url_for("login"))
+
+        mentorship = get_db().execute(
+            """
+            SELECT
+                mentorship_requests.id AS request_id,
+                students.name AS student_name,
+                mentors.name AS mentor_name,
+                mentor_profiles.expertise,
+                mentorships.start_date,
+                mentorships.end_date
+            FROM mentorships
+            JOIN mentorship_requests
+                ON mentorship_requests.id = mentorships.request_id
+            JOIN users AS students
+                ON students.id = mentorship_requests.student_id
+            JOIN mentor_profiles
+                ON mentor_profiles.id = mentorships.mentor_profile_id
+            JOIN users AS mentors ON mentors.id = mentor_profiles.user_id
+            WHERE mentor_profiles.user_id = ?
+              AND mentorship_requests.status = 'accepted'
+              AND mentorships.status = 'active'
+            ORDER BY mentorships.id DESC
+            LIMIT 1
+            """,
+            (session["user_id"],),
+        ).fetchone()
+
+        return render_template(
+            "active_mentorship.html",
+            mentorship=mentorship,
+            role="Mentor",
         )
 
     @app.post("/logout")

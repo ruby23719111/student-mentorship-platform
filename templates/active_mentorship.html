@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Active mentorship | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('student_mentors') if role == 'Student' else url_for('mentor_requests') }}">MentorLink</a>
+    <span class="topbar__context">{{ role }}</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="{{ role }} navigation">
+      <nav class="sidebar__nav">
+        {% if role == 'Student' %}
+          <a class="sidebar__link" href="{{ url_for('student_mentors') }}">Discover mentors</a>
+          <a class="sidebar__link" href="{{ url_for('student_requests') }}">My requests</a>
+          <a class="sidebar__link sidebar__link--active" href="{{ url_for('student_active_mentorships') }}" aria-current="page">Active mentorships</a>
+        {% else %}
+          <a class="sidebar__link" href="{{ url_for('mentor_requests') }}">Pending requests</a>
+          <a class="sidebar__link sidebar__link--active" href="{{ url_for('mentor_active_mentorships') }}" aria-current="page">Active mentorships</a>
+          <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
+        {% endif %}
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="tracking-page tracking-page--active">
+      <h1>Active mentorship</h1>
+
+      {% if mentorship %}
+        <article class="active-mentorship-card">
+          <h2>{{ mentorship.student_name }} + {{ mentorship.mentor_name }}</h2>
+          <span class="status-badge status-badge--active">Active</span>
+          <p class="active-mentorship-card__label">12-week mentorship period</p>
+          <p class="active-mentorship-card__dates">{{ mentorship.start_date | format_long_date }} <span>→</span> {{ mentorship.end_date | format_long_date }}</p>
+          <p class="active-mentorship-card__next">Next step: Arrange the first meeting and agree on goals.</p>
+          <div class="mentorship-progress" aria-hidden="true"></div>
+          <div class="milestone-grid">
+            <section class="milestone milestone--current">
+              <h3>Week 1</h3>
+              <p>Set goals &amp; meeting rhythm</p>
+            </section>
+            <section class="milestone">
+              <h3>Week 6</h3>
+              <p>Midpoint progress check</p>
+            </section>
+            <section class="milestone">
+              <h3>Week 12</h3>
+              <p>Reflect &amp; close mentorship</p>
+            </section>
+          </div>
+        </article>
+      {% else %}
+        <section class="request-empty-state">
+          <h2>No active mentorship</h2>
+          <p>An accepted mentorship will appear here.</p>
+        </section>
+      {% endif %}
+    </main>
+  </div>
+{% endblock %}
