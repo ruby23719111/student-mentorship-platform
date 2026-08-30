@@ -67,6 +67,17 @@ Deployment templates are stored in:
 - `deploy/mentorlink.service`
 - `deploy/nginx-mentorlink.conf`
 
+After creating the runtime configuration described below, install and enable the templates:
+
+    sudo install -m 644 deploy/mentorlink.service /etc/systemd/system/mentorlink.service
+    sudo install -m 644 deploy/nginx-mentorlink.conf /etc/nginx/sites-available/mentorlink
+    sudo ln -sfn /etc/nginx/sites-available/mentorlink /etc/nginx/sites-enabled/mentorlink
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo nginx -t
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now mentorlink
+    sudo systemctl reload nginx
+
 The systemd template assumes the repository is located at:
 
     /home/ubuntu/student-mentorship-platform
