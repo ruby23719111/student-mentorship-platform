@@ -177,6 +177,14 @@ class MentorLinkTestCase(unittest.TestCase):
             (request_id,),
         )
         self.assertEqual(mentorship["duration_days"], 84)
+        mentor_capacity = self.database_row(
+            """
+            SELECT active_mentees
+            FROM mentor_profiles
+            WHERE id = 1
+            """
+        )
+        self.assertEqual(mentor_capacity["active_mentees"], 2)
 
         self.clear_session()
         self.login("kris.student@qut.edu.au", "Student123!", "student")
