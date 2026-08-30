@@ -486,6 +486,10 @@ def create_app() -> Flask:
         if request_item is None:
             flash("That mentorship request could not be found.", "error")
             return redirect(url_for("student_mentors"))
+        if request_item["status"] == "accepted":
+            return redirect(url_for("student_active_mentorships"))
+        if request_item["status"] != "pending":
+            return redirect(url_for("student_requests"))
 
         return render_template(
             "student_request_submitted.html",
