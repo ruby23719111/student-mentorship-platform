@@ -43,17 +43,30 @@
           <p>{{ request_item.message }}</p>
         </section>
 
-        <p class="eligibility-checks" aria-label="Eligibility checks passed">
+        <div class="eligibility-checks" aria-label="Request eligibility checks">
           <span>✓ Student eligibility verified</span>
-          <span>✓ Capacity available</span>
+          {% if request_item.active_mentees < request_item.capacity %}
+            <span>✓ Capacity available</span>
+          {% else %}
+            <span class="eligibility-checks__warning">! Capacity is currently full</span>
+          {% endif %}
           <span>✓ Request limit satisfied</span>
-        </p>
+        </div>
 
         <form class="decision-actions" action="{{ url_for('mentor_request_decision', request_id=request_item.id) }}" method="post">
           <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
           <button class="button button--danger" type="submit" name="action" value="reject">Reject</button>
-          <button class="button button--primary" type="submit" name="action" value="accept">Accept</button>
+          <button
+            class="button button--primary"
+            type="submit"
+            name="action"
+            value="accept"
+            {% if request_item.active_mentees >= request_item.capacity %}disabled aria-describedby="capacity-warning"{% endif %}
+          >Accept</button>
         </form>
+        {% if request_item.active_mentees >= request_item.capacity %}
+          <p class="capacity-warning" id="capacity-warning">Update your capacity before accepting this request.</p>
+        {% endif %}
       </article>
     </main>
   </div>

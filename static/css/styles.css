@@ -882,6 +882,17 @@ a {
   font-weight: 600;
 }
 
+.eligibility-checks__warning,
+.capacity-warning {
+  color: #bd2129;
+}
+
+.capacity-warning {
+  margin: 12px 0 0;
+  text-align: right;
+  font-size: 12px;
+}
+
 .decision-actions {
   margin-top: auto;
   display: flex;
@@ -898,6 +909,12 @@ a {
   color: #bd2129;
   background: white;
   border: 1.5px solid #bd2129;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+  opacity: 0.55;
 }
 
 .mentor-page--decision > h1,
