@@ -1,0 +1,17 @@
+[Unit]
+Description=MentorLink Flask web application
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/student-mentorship-platform
+EnvironmentFile=/etc/mentorlink/mentorlink.env
+ExecStart=/home/ubuntu/student-mentorship-platform/.venv/bin/gunicorn --workers 2 --bind 127.0.0.1:8000 app:app
+Restart=on-failure
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
