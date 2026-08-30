@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Request accepted | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('mentor_requests') }}">MentorLink</a>
+    <span class="topbar__context">Mentor</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Mentor navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link" href="{{ url_for('mentor_requests') }}">Pending requests</a>
+        <span class="sidebar__link sidebar__link--active" aria-current="page">Active mentorships</span>
+        <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="mentor-page mentor-page--decision">
+      <h1>Request accepted</h1>
+
+      <section class="decision-alert decision-alert--success" role="status">
+        <h2>Active mentorship created</h2>
+        <p>{{ mentorship.student_name }} has been notified. The mentorship runs for 12 weeks.</p>
+      </section>
+
+      <article class="mentorship-card">
+        <h2>{{ mentorship.student_name }} + {{ mentorship.mentor_name }}</h2>
+        <span class="status-badge status-badge--active">Active</span>
+        <p>{{ mentorship.start_date | format_date }} – {{ mentorship.end_date | format_date }} • {{ mentorship.expertise }}</p>
+        <a class="button button--primary" href="{{ url_for('mentor_request_accepted', request_id=mentorship.request_id) }}">View mentorship</a>
+      </article>
+    </main>
+  </div>
+{% endblock %}

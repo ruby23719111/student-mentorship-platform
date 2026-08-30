@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Review request | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('mentor_requests') }}">MentorLink</a>
+    <span class="topbar__context">Mentor</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Mentor navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('mentor_requests') }}" aria-current="page">Pending requests</a>
+        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+        <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="mentor-page">
+      <h1>Review mentorship request</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="form-alert form-alert--{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      <article class="request-review-card">
+        <h2>{{ request_item.student_name }}</h2>
+
+        <section class="request-review-card__section">
+          <h3>Learning goal</h3>
+          <p>{{ request_item.learning_goal }}</p>
+        </section>
+
+        <section class="request-review-card__section">
+          <h3>Message</h3>
+          <p>{{ request_item.message }}</p>
+        </section>
+
+        <div class="eligibility-checks" aria-label="Request eligibility checks">
+          <span>✓ Student eligibility verified</span>
+          {% if request_item.active_mentees < request_item.capacity %}
+            <span>✓ Capacity available</span>
+          {% else %}
+            <span class="eligibility-checks__warning">! Capacity is currently full</span>
+          {% endif %}
+          <span>✓ Request limit satisfied</span>
+        </div>
+
+        <form class="decision-actions" action="{{ url_for('mentor_request_decision', request_id=request_item.id) }}" method="post">
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+          <button class="button button--danger" type="submit" name="action" value="reject">Reject</button>
+          <button
+            class="button button--primary"
+            type="submit"
+            name="action"
+            value="accept"
+            {% if request_item.active_mentees >= request_item.capacity %}disabled aria-describedby="capacity-warning"{% endif %}
+          >Accept</button>
+        </form>
+        {% if request_item.active_mentees >= request_item.capacity %}
+          <p class="capacity-warning" id="capacity-warning">Update your capacity before accepting this request.</p>
+        {% endif %}
+      </article>
+    </main>
+  </div>
+{% endblock %}

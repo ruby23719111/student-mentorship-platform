@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Pending requests | MentorLink{% endblock %}
+
+{% block body %}
+  <header class="topbar">
+    <a class="topbar__brand" href="{{ url_for('mentor_requests') }}">MentorLink</a>
+    <span class="topbar__context">Mentor</span>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Mentor navigation">
+      <nav class="sidebar__nav">
+        <a class="sidebar__link sidebar__link--active" href="{{ url_for('mentor_requests') }}" aria-current="page">Pending requests</a>
+        <span class="sidebar__link sidebar__link--pending">Active mentorships</span>
+        <span class="sidebar__link sidebar__link--pending">Profile &amp; capacity</span>
+      </nav>
+      <form class="sidebar__logout" action="{{ url_for('logout') }}" method="post">
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Sign out</button>
+      </form>
+    </aside>
+
+    <main class="mentor-page">
+      <h1>Pending requests</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="form-alert form-alert--{{ category }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+
+      {% if pending_requests %}
+        <div class="pending-request-list">
+          {% for request_item in pending_requests %}
+            <article class="pending-request-card">
+              <h2>{{ request_item.student_name }}</h2>
+              <p class="pending-request-card__goal">{{ request_item.learning_goal }}</p>
+              <p class="pending-request-card__meta">
+                Submitted {{ request_item.submitted_at | format_date }} • Student has no other active request
+              </p>
+              <a class="button button--primary pending-request-card__action" href="{{ url_for('mentor_request_review', request_id=request_item.id) }}">Review request</a>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <section class="mentor-empty-state" aria-labelledby="empty-title">
+          <h2 id="empty-title">No pending requests</h2>
+          <p>New mentorship requests will appear here when students contact you.</p>
+        </section>
+      {% endif %}
+    </main>
+  </div>
+{% endblock %}
